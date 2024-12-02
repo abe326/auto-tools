@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyScriptでのスクレイピング</title>
+    <script src="https://pyscript.net/latest/pyscript.js"></script>
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css">
+    <style>
+        .result {
+            margin-top: 20px;
+        }
+        pre {
+            white-space: pre-wrap; /* 長い行も折り返して表示 */
+            word-wrap: break-word; /* 単語の途中でも改行 */
+            background-color: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="scrapeButton">スクレイピング</button>
+
+    <pre id="output" class="result"></pre>
+
+    <py-script>
+        from pyscript import Element
+        import asyncio
+        import micropip
+        import csv
+        import io
+
+        # 非同期でbeautifulsoup4をインストール
+        async def install_and_scrape():
+            await micropip.install('beautifulsoup4')
+            from bs4 import BeautifulSoup
+
+            # HTMLを文字列として取得
+            html = """
+                <div class="post">
+                    <h6>初めてのスクレイピング</h6>
+                    <p>これは初めてのスクレイピングに関する記事。</p>
+                    <span class="author">John Doe</span>
+                </div>
+                <div class="post">
+                    <h6>Pythonでスクレイピング</h6>
+                    <p>Pythonを使ってウェブサイトをスクレイピングする方法。</p>
+                    <span class="author">Jane Smith</span>
+                </div>
+            """
+
+            # BeautifulSoupでHTMLを解析
+            soup = BeautifulSoup(html, "html.parser")
+
+            # 投稿を抽出
+            posts = soup.find_all("div", class_="post")
+            csv_output = io.StringIO()
+            writer = csv.writer(csv_output)
+
+            # CSVヘッダーを記述
+            writer.writerow(["タイトル", "内容", "著者"])
+
+            for post in posts:
+                title = post.find("h6").get_text()
+                content = post.find("p").get_text()
+                author = post.find("span", class_="author").get_text()
+
+                # 投稿ごとにCSVに書き込み
+                writer.writerow([title, content, author])
+
+            # CSVの内容を取得
+            csv_data = csv_output.getvalue()
+
+            # 結果を表示
+            Element("output").write("hello world")
+            Element("output").write(f"{csv_data}")
+
+        # ボタンのクリックイベントを設定
+        def on_button_click(event):
+            # 非同期関数を実行
+            asyncio.ensure_future(install_and_scrape())
+
+        # イベントリスナーの追加
+        Element("scrapeButton").element.onclick = on_button_click
+    </py-script>
+
+</body>
+</html>
